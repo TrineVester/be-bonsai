@@ -79,3 +79,5 @@
 The most interesting tension in a bonsai game is **patience vs. intervention** — the tree needs time, but incorrect timing of any operation causes setbacks. A game could represent this through a **calendar system** where every action has an optimal window, risk outside that window, and the player must learn to read the tree's state (bud swell, leaf color, soil moisture) rather than just executing on a fixed schedule.
 
 The player can choose from three tree species at the start: **Juniper**, **Ficus**, and **Chinese Elm**. Each has different care requirements and growth characteristics. The pot is a standard **terracotta pot**, shared across all species.
+
+The visual style is **low poly**, giving the game a clean, geometric aesthetic.
