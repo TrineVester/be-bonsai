@@ -1,12 +1,12 @@
-extends Node2D
+extends Node3D
 
-const SPECIES := ["Japanese Maple", "Juniper", "Ficus"]
+const TREE_POSITIONS := [Vector3(-2.2, 0.2, 0.0), Vector3(0.0, 0.2, 0.0), Vector3(2.2, 0.2, 0.0)]
 
 var _trees: Array[TreeData] = []
-var _slot_moisture_bars: Array[ProgressBar] = []
-var _slot_health_labels: Array[Label] = []
+var _tree_nodes: Array[Node3D] = []
 
 var _held_tree: TreeData = null
+var _held_index: int = -1
 
 var _date_label: Label
 var _month_progress_bar: ProgressBar
@@ -21,6 +21,7 @@ var _fertilize_feedback: Label
 
 
 func _ready() -> void:
+	_setup_world()
 	_create_trees()
 	_build_ui()
 	GameClock.month_advanced.connect(_on_month_advanced)
@@ -32,13 +33,78 @@ func _process(_delta: float) -> void:
 	_month_progress_bar.value = GameClock.get_month_progress()
 
 
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if _inspector_panel.visible:
+			return
+		_try_pick_tree(event.position)
+
+
+func _setup_world() -> void:
+	var camera := Camera3D.new()
+	camera.position = Vector3(0.0, 2.5, 6.0)
+	camera.rotation_degrees = Vector3(-18.0, 0.0, 0.0)
+	add_child(camera)
+
+	var light := DirectionalLight3D.new()
+	light.rotation_degrees = Vector3(-50.0, 30.0, 0.0)
+	light.light_energy = 1.2
+	add_child(light)
+
+	var ambient := WorldEnvironment.new()
+	var env := Environment.new()
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color(0.6, 0.6, 0.6)
+	env.ambient_light_energy = 0.5
+	ambient.environment = env
+	add_child(ambient)
+
+	# Shelf / table surface
+	var shelf_mesh := BoxMesh.new()
+	shelf_mesh.size = Vector3(7.5, 0.2, 2.2)
+	var shelf_mat := StandardMaterial3D.new()
+	shelf_mat.albedo_color = Color(0.42, 0.28, 0.14)
+	shelf_mesh.surface_set_material(0, shelf_mat)
+	var shelf := MeshInstance3D.new()
+	shelf.mesh = shelf_mesh
+	shelf.position = Vector3(0.0, -0.1, 0.0)
+	add_child(shelf)
+
+
 func _create_trees() -> void:
-	for species: String in SPECIES:
-		var tree := TreeData.new()
-		tree.species = species
+	var data_instances: Array[TreeData] = [JuniperData.new(), FicusData.new(), ChineseElmData.new()]
+	var mesh_classes: Array = [JuniperMesh, FicusMesh, ChineseElmMesh]
+
+	for i in 3:
+		var tree: TreeData = data_instances[i]
 		tree.age_months = randi_range(12, 60)
 		tree.moisture = randf_range(0.5, 0.9)
 		_trees.append(tree)
+
+		var mesh_node: Node3D = mesh_classes[i].new()
+		mesh_node.position = TREE_POSITIONS[i]
+		add_child(mesh_node)
+		_tree_nodes.append(mesh_node)
+
+		# Species label floating above the tree
+		var label := Label3D.new()
+		label.text = tree.species
+		label.position = Vector3(0.0, 2.4, 0.0)
+		label.font_size = 32
+		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		mesh_node.add_child(label)
+
+		# Area3D for click detection
+		var area := Area3D.new()
+		area.set_meta("tree_index", i)
+		var shape := CollisionShape3D.new()
+		var capsule := CapsuleShape3D.new()
+		capsule.radius = 0.7
+		capsule.height = 2.2
+		shape.shape = capsule
+		shape.position = Vector3(0.0, 1.1, 0.0)
+		area.add_child(shape)
+		mesh_node.add_child(area)
 
 
 # ── UI Construction ──────────────────────────────────────────────────────────
@@ -53,7 +119,12 @@ func _build_ui() -> void:
 	canvas.add_child(root)
 
 	_build_top_bar(root)
-	_build_shelf(root)
+
+	# Spacer pushes inspector to the bottom
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	root.add_child(spacer)
+
 	_build_inspector(root)
 
 
@@ -96,72 +167,22 @@ func _build_top_bar(parent: Control) -> void:
 		_speed_buttons.append(btn)
 
 
-func _build_shelf(parent: Control) -> void:
-	var panel := PanelContainer.new()
-	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	parent.add_child(panel)
-
-	var vbox := VBoxContainer.new()
-	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.add_theme_constant_override("separation", 16)
-	panel.add_child(vbox)
-
-	var title := Label.new()
-	title.text = "— Shelf —"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 16)
-	vbox.add_child(title)
-
-	var hbox := HBoxContainer.new()
-	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	hbox.add_theme_constant_override("separation", 24)
-	vbox.add_child(hbox)
-
-	for i in _trees.size():
-		hbox.add_child(_build_tree_slot(i))
-
-
-func _build_tree_slot(index: int) -> Control:
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(180, 230)
-
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 6)
-	panel.add_child(vbox)
-
-	var name_label := Label.new()
-	name_label.text = _trees[index].species
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.add_theme_font_size_override("font_size", 13)
-	vbox.add_child(name_label)
-
-	var visual := ColorRect.new()
-	visual.color = Color(0.18, 0.45, 0.18)
-	visual.custom_minimum_size = Vector2(160, 120)
-	visual.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	vbox.add_child(visual)
-
-	var moisture_bar := ProgressBar.new()
-	moisture_bar.max_value = 1.0
-	moisture_bar.value = _trees[index].moisture
-	moisture_bar.show_percentage = false
-	moisture_bar.custom_minimum_size.y = 14
-	vbox.add_child(moisture_bar)
-	_slot_moisture_bars.append(moisture_bar)
-
-	var health_label := Label.new()
-	health_label.text = _health_text(_trees[index].health)
-	health_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	health_label.add_theme_font_size_override("font_size", 11)
-	vbox.add_child(health_label)
-	_slot_health_labels.append(health_label)
-
-	var btn := Button.new()
-	btn.text = "Pick Up"
-	btn.pressed.connect(_pick_up_tree.bind(index))
-	vbox.add_child(btn)
-
-	return panel
+func _try_pick_tree(mouse_pos: Vector2) -> void:
+	var camera := get_viewport().get_camera_3d()
+	if not camera:
+		return
+	var space := get_world_3d().direct_space_state
+	var origin := camera.project_ray_origin(mouse_pos)
+	var direction := camera.project_ray_normal(mouse_pos)
+	var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * 100.0)
+	query.collide_with_areas = true
+	query.collide_with_bodies = false
+	var result := space.intersect_ray(query)
+	if result.is_empty():
+		return
+	var collider = result["collider"]
+	if collider is Area3D and collider.has_meta("tree_index"):
+		_pick_up_tree(collider.get_meta("tree_index"))
 
 
 func _build_inspector(parent: Control) -> void:
@@ -235,6 +256,7 @@ func _build_inspector(parent: Control) -> void:
 
 func _pick_up_tree(index: int) -> void:
 	_held_tree = _trees[index]
+	_held_index = index
 	GameClock.pause_for_interaction()
 	_inspector_panel.visible = true
 	_fertilize_feedback.visible = false
@@ -243,9 +265,9 @@ func _pick_up_tree(index: int) -> void:
 
 func _put_back_tree() -> void:
 	_held_tree = null
+	_held_index = -1
 	GameClock.resume_from_interaction()
 	_inspector_panel.visible = false
-	_refresh_shelf()
 
 
 func _do_operation(op: String) -> void:
@@ -292,9 +314,7 @@ func _on_speed_changed(_speed: int) -> void:
 # ── Refresh ───────────────────────────────────────────────────────────────────
 
 func _refresh_shelf() -> void:
-	for i in _trees.size():
-		_slot_moisture_bars[i].value = _trees[i].moisture
-		_slot_health_labels[i].text = _health_text(_trees[i].health)
+	pass  # Tree state is shown in the inspector; 3D visuals update via Label3D if needed
 
 
 func _refresh_inspector() -> void:
