@@ -13,3 +13,8 @@ config_version=5
 config/name="Be Bonsai"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
+run/main_scene="res://scenes/main/Main.tscn"
+
+[autoload]
+
+GameClock="*res://autoloads/GameClock.gd"
