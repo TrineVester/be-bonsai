@@ -1,10 +1,10 @@
 class_name TreeData
 extends Resource
 
-const MOISTURE_DRAIN_PER_MONTH := 0.25
-const HEALTH_DAMAGE_DRY := 0.15
-const HEALTH_REGEN_HEALTHY := 0.05
-const REPOT_INTERVAL_MONTHS := 24
+var MOISTURE_DRAIN_PER_MONTH := 0.25
+var HEALTH_DAMAGE_DRY := 0.15
+var HEALTH_REGEN_HEALTHY := 0.05
+var REPOT_INTERVAL_MONTHS := 24
 
 @export var species: String = "Unknown"
 @export var age_months: int = 0
