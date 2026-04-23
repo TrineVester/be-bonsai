@@ -6,7 +6,7 @@ extends TreeData
 
 func _init() -> void:
 	species = "Chinese Elm"
-	MOISTURE_DRAIN_PER_MONTH = 0.25   # average moisture needs
-	HEALTH_DAMAGE_DRY = 0.12          # moderately sensitive
-	HEALTH_REGEN_HEALTHY = 0.06       # average recovery
-	REPOT_INTERVAL_MONTHS = 24        # repot every ~2 years
+	self.MOISTURE_DRAIN_PER_MONTH = 0.25   # average moisture needs
+	self.HEALTH_DAMAGE_DRY = 0.12          # moderately sensitive
+	self.HEALTH_REGEN_HEALTHY = 0.06       # average recovery
+	self.REPOT_INTERVAL_MONTHS = 24        # repot every ~2 years
