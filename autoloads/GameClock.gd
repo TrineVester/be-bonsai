@@ -1,50 +1,66 @@
 extends Node
 
-signal month_advanced(month: int, year: int)
-signal speed_changed(speed: int)
+signal speed_changed(speed: float)
 
-# Time scale: at speed 1, 1 real second = 1 game minute.
-# One game day (1440 minutes) = one bonsai month.
-const MINUTES_PER_MONTH := 1440.0
-
-const SPEED_PAUSED := 0
-const SPEED_NORMAL := 1
-const SPEED_DOUBLE := 2
-const SPEED_TRIPLE := 3
+const SPEED_PAUSED := 0.0
+const SPEED_1X     := 1.0
+const SPEED_10X    := 10.0
+const SPEED_100X   := 100.0
 
 const MONTH_NAMES := [
 	"January", "February", "March", "April", "May", "June",
 	"July", "August", "September", "October", "November", "December"
 ]
 
-var speed: int = SPEED_NORMAL
+var speed: float = SPEED_1X
 var paused_by_interaction := false
-
-var _accumulated_minutes: float = 0.0
-var current_month: int = 3  # Start in March
-var current_year: int = 1
+var _elapsed: float = 0.0
 
 
 func _process(delta: float) -> void:
-	if speed == SPEED_PAUSED or paused_by_interaction:
-		return
-
-	_accumulated_minutes += delta * float(speed)
-
-	while _accumulated_minutes >= MINUTES_PER_MONTH:
-		_accumulated_minutes -= MINUTES_PER_MONTH
-		_advance_month()
+	if not paused_by_interaction and speed != SPEED_PAUSED:
+		_elapsed += delta * speed
 
 
-func _advance_month() -> void:
-	current_month += 1
-	if current_month > 12:
-		current_month = 1
-		current_year += 1
-	month_advanced.emit(current_month, current_year)
+func get_scaled_delta(delta: float) -> float:
+	if paused_by_interaction or speed == SPEED_PAUSED:
+		return 0.0
+	return delta * speed
 
 
-func set_speed(new_speed: int) -> void:
+func get_second() -> int:
+	return int(_elapsed) % 60
+
+
+func get_minute() -> int:
+	return int(_elapsed / 60.0) % 60
+
+
+func get_hour() -> int:
+	return int(_elapsed / 3600.0) % 24
+
+
+func get_day() -> int:
+	return (int(_elapsed / 86400.0) % 30) + 1
+
+
+func get_month() -> int:
+	return (int(_elapsed / 2592000.0) % 12) + 1
+
+
+func get_year() -> int:
+	return int(_elapsed / 31104000.0) + 1
+
+
+func get_time_string() -> String:
+	return "%02d:%02d:%02d" % [get_hour(), get_minute(), get_second()]
+
+
+func get_date_string() -> String:
+	return "%s %d, Year %d" % [MONTH_NAMES[get_month() - 1], get_day(), get_year()]
+
+
+func set_speed(new_speed: float) -> void:
 	speed = new_speed
 	speed_changed.emit(speed)
 
@@ -56,10 +72,3 @@ func pause_for_interaction() -> void:
 func resume_from_interaction() -> void:
 	paused_by_interaction = false
 
-
-func get_month_progress() -> float:
-	return _accumulated_minutes / MINUTES_PER_MONTH
-
-
-func get_month_name() -> String:
-	return MONTH_NAMES[current_month - 1]
