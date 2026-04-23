@@ -4,6 +4,7 @@ const TREE_POSITIONS := [Vector3(-2.2, 0.2, 0.0), Vector3(0.0, 0.2, 0.0), Vector
 
 var _trees: Array[TreeData] = []
 var _tree_nodes: Array[Node3D] = []
+var _pot_nodes: Array[Node3D] = []
 
 var _held_tree: TreeData = null
 var _held_index: int = -1
@@ -74,6 +75,8 @@ func _setup_world() -> void:
 func _create_trees() -> void:
 	var data_instances: Array[TreeData] = [JuniperData.new(), FicusData.new(), ChineseElmData.new()]
 	var mesh_classes: Array = [JuniperMesh, FicusMesh, ChineseElmMesh]
+	# Default pot for each tree — can be swapped independently
+	var default_pot_class := TerracottaClassicPot
 
 	for i in 3:
 		var tree: TreeData = data_instances[i]
@@ -85,6 +88,12 @@ func _create_trees() -> void:
 		mesh_node.position = TREE_POSITIONS[i]
 		add_child(mesh_node)
 		_tree_nodes.append(mesh_node)
+
+		# Pot sits at the base of the tree, centered on the same position
+		var pot_node: Node3D = default_pot_class.new()
+		pot_node.position = TREE_POSITIONS[i]
+		add_child(pot_node)
+		_pot_nodes.append(pot_node)
 
 		# Species label floating above the tree
 		var label := Label3D.new()
