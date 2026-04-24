@@ -15,7 +15,8 @@ var _speed_buttons: Array[Button] = []
 var _action_panel: PanelContainer
 var _tree_overlays: Array[Control] = []
 var _stat_bars: Array[Dictionary] = []
-var _clock_label: Label
+var _analog_clock: Control
+var _calendar_page: Control
 
 
 func _ready() -> void:
@@ -32,8 +33,6 @@ func _process(delta: float) -> void:
 	var dt := GameClock.get_scaled_delta(delta)
 	for tree: TreeData in _trees:
 		tree.on_time_passed(dt)
-
-	_clock_label.text = "%s  %s" % [GameClock.get_time_string(), GameClock.get_date_string()]
 
 	var camera := get_viewport().get_camera_3d()
 	for i in 3:
@@ -113,31 +112,97 @@ func _build_ui() -> void:
 
 
 func _build_top_bar(canvas: CanvasLayer) -> void:
-	var panel := PanelContainer.new()
-	panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	canvas.add_child(panel)
+	var outer := HBoxContainer.new()
+	outer.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	outer.add_theme_constant_override("separation", 8)
+	outer.offset_left = 8.0
+	outer.offset_top  = 8.0
+	canvas.add_child(outer)
 
-	var hbox := HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 6)
-	panel.add_child(hbox)
+	var card := PanelContainer.new()
+	var card_style := StyleBoxFlat.new()
+	card_style.bg_color            = Color(0.08, 0.08, 0.10, 0.82)
+	card_style.corner_radius_top_left     = 8
+	card_style.corner_radius_top_right    = 8
+	card_style.corner_radius_bottom_left  = 8
+	card_style.corner_radius_bottom_right = 8
+	card_style.content_margin_left   = 10.0
+	card_style.content_margin_right  = 10.0
+	card_style.content_margin_top    = 8.0
+	card_style.content_margin_bottom = 8.0
+	card.add_theme_stylebox_override("panel", card_style)
+	outer.add_child(card)
 
-	_clock_label = Label.new()
-	_clock_label.add_theme_font_size_override("font_size", 14)
-	_clock_label.custom_minimum_size.x = 240
-	hbox.add_child(_clock_label)
+	var card_hbox := HBoxContainer.new()
+	card_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	card_hbox.add_theme_constant_override("separation", 10)
+	card.add_child(card_hbox)
+
+	_analog_clock = AnalogClock.new()
+	_analog_clock.custom_minimum_size = Vector2(48.0, 48.0)
+	card_hbox.add_child(_analog_clock)
+
+	var divider := ColorRect.new()
+	divider.color = Color(1.0, 1.0, 1.0, 0.12)
+	divider.custom_minimum_size = Vector2(1.0, 36.0)
+	card_hbox.add_child(divider)
+
+	_calendar_page = CalendarPage.new()
+	card_hbox.add_child(_calendar_page)
 
 	var sep := Control.new()
-	sep.custom_minimum_size.x = 8
-	hbox.add_child(sep)
+	sep.custom_minimum_size.x = 16.0
+	outer.add_child(sep)
 
-	var speed_options: Array = [["Pause", 0.0], ["1×", 1.0], ["10×", 10.0], ["100×", 100.0]]
+	var speed_card := PanelContainer.new()
+	speed_card.add_theme_stylebox_override("panel", card_style)
+	outer.add_child(speed_card)
+
+	var speed_hbox := HBoxContainer.new()
+	speed_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	speed_hbox.add_theme_constant_override("separation", 4)
+	speed_card.add_child(speed_hbox)
+
+	var speed_options: Array = [["Pause", 0.0], ["Slow", 1440.0], ["Normal", 8640.0], ["Fast", 86400.0]]
+
+	var style_normal := StyleBoxFlat.new()
+	style_normal.bg_color = Color(0.0, 0.0, 0.0, 0.0)
+	style_normal.corner_radius_top_left     = 5
+	style_normal.corner_radius_top_right    = 5
+	style_normal.corner_radius_bottom_left  = 5
+	style_normal.corner_radius_bottom_right = 5
+	style_normal.content_margin_left   = 8.0
+	style_normal.content_margin_right  = 8.0
+	style_normal.content_margin_top    = 4.0
+	style_normal.content_margin_bottom = 4.0
+
+	var style_pressed := StyleBoxFlat.new()
+	style_pressed.bg_color = Color(1.0, 1.0, 1.0, 0.12)
+	style_pressed.corner_radius_top_left     = 5
+	style_pressed.corner_radius_top_right    = 5
+	style_pressed.corner_radius_bottom_left  = 5
+	style_pressed.corner_radius_bottom_right = 5
+	style_pressed.content_margin_left   = 8.0
+	style_pressed.content_margin_right  = 8.0
+	style_pressed.content_margin_top    = 4.0
+	style_pressed.content_margin_bottom = 4.0
+
 	for entry: Array in speed_options:
 		var btn := Button.new()
 		btn.text = entry[0]
-		btn.custom_minimum_size = Vector2(60, 32)
+		btn.custom_minimum_size = Vector2(58, 30)
 		btn.toggle_mode = true
+		btn.flat = true
+		btn.add_theme_stylebox_override("normal",        style_normal)
+		btn.add_theme_stylebox_override("hover",         style_normal)
+		btn.add_theme_stylebox_override("pressed",       style_pressed)
+		btn.add_theme_stylebox_override("focus",         style_normal)
+		btn.add_theme_color_override("font_color",              Color(1.0, 1.0, 1.0, 0.45))
+		btn.add_theme_color_override("font_hover_color",        Color(1.0, 1.0, 1.0, 0.75))
+		btn.add_theme_color_override("font_pressed_color",      Color(1.0, 1.0, 1.0, 1.00))
+		btn.add_theme_color_override("font_focus_color",        Color(1.0, 1.0, 1.0, 0.45))
 		btn.pressed.connect(GameClock.set_speed.bind(entry[1]))
-		hbox.add_child(btn)
+		speed_hbox.add_child(btn)
 		_speed_buttons.append(btn)
 
 
@@ -287,6 +352,6 @@ func _on_speed_changed(_speed: float) -> void:
 
 
 func _update_speed_buttons() -> void:
-	var speeds: Array = [0.0, 1.0, 10.0, 100.0]
+	var speeds: Array = [0.0, 1440.0, 8640.0, 86400.0]
 	for i in _speed_buttons.size():
 		_speed_buttons[i].button_pressed = (GameClock.speed == speeds[i])

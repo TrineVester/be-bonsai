@@ -2,17 +2,17 @@ extends Node
 
 signal speed_changed(speed: float)
 
-const SPEED_PAUSED := 0.0
-const SPEED_1X     := 1.0
-const SPEED_10X    := 10.0
-const SPEED_100X   := 100.0
+const SPEED_PAUSED  := 0.0
+const SPEED_SLOW    := 1440.0    # 1 game day per real minute
+const SPEED_NORMAL  := 8640.0    # 1 game day per 10 real seconds
+const SPEED_FAST    := 86400.0   # 1 game day per real second
 
 const MONTH_NAMES := [
 	"January", "February", "March", "April", "May", "June",
 	"July", "August", "September", "October", "November", "December"
 ]
 
-var speed: float = SPEED_1X
+var speed: float = SPEED_SLOW
 var paused_by_interaction := false
 var _elapsed: float = 0.0
 
