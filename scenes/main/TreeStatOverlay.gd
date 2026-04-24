@@ -1,16 +1,20 @@
 class_name TreeStatOverlay
 extends PanelContainer
 
-const STAT_NAMES  := ["Water", "Health", "Fert", "Prune", "Repot"]
+const STAT_NAMES  := ["Water", "Health", "Fert", "Prune", "Repot", "Wire!"]
 const STAT_COLORS := [
 	Color(0.25, 0.55, 1.00),
 	Color(0.25, 0.85, 0.35),
 	Color(1.00, 0.60, 0.20),
 	Color(1.00, 0.90, 0.20),
 	Color(0.70, 0.30, 1.00),
+	Color(1.00, 0.30, 0.10),
 ]
 
 var _bars: Array[ProgressBar] = []
+var _rows: Array[HBoxContainer] = []
+var _health_fill:   StyleBoxFlat = null
+var _moisture_fill: StyleBoxFlat = null
 
 
 func _ready() -> void:
@@ -41,11 +45,30 @@ func _ready() -> void:
 		row.add_child(bar)
 
 		_bars.append(bar)
+		_rows.append(row)
+		if j == 0:
+			_moisture_fill = style
+		elif j == 1:
+			_health_fill = style
 
 
 func refresh(tree: TreeData) -> void:
-	_bars[0].value = tree.moisture
-	_bars[1].value = tree.health
+	var m := tree.moisture
+	_bars[0].value = m
+	if _moisture_fill:
+		if m > 0.4:
+			_moisture_fill.bg_color = Color(0.25, 0.55, 1.00).lerp(Color(0.45, 0.75, 1.00), clampf((m - 0.4) / 0.6, 0.0, 1.0))
+		else:
+			_moisture_fill.bg_color = Color(0.25, 0.55, 1.00).lerp(Color(1.00, 0.50, 0.10), clampf((0.4 - m) / 0.4, 0.0, 1.0))
+	var h := tree.health
+	_bars[1].value = h
+	if _health_fill:
+		if h > 0.6:
+			_health_fill.bg_color = Color(0.25, 0.85, 0.35).lerp(Color(0.90, 0.85, 0.15), (1.0 - h) / 0.4)
+		else:
+			_health_fill.bg_color = Color(0.90, 0.85, 0.15).lerp(Color(0.90, 0.20, 0.15), (0.6 - h) / 0.6)
 	_bars[2].value = tree.fertilizer_level
 	_bars[3].value = tree.get_prune_urgency()
-	_bars[4].value = tree.get_repot_urgency()
+	var repot_urgency := tree.get_repot_urgency()
+	_bars[4].value = repot_urgency
+	_rows[4].visible = repot_urgency > 0.05
