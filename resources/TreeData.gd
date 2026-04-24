@@ -1,15 +1,20 @@
 class_name TreeData
 extends Resource
 
-# Per-second rates. At speed 1×, one notional "game month" ≈ 300 real seconds,
-# so a full moisture drain takes ~20 minutes and is observable without being tedious.
-var MOISTURE_DRAIN_RATE   := 0.000833   # 0.25 per 300 s
-var HEALTH_DAMAGE_RATE    := 0.000500   # per second when dry
-var HEALTH_REGEN_RATE     := 0.000167   # per second in healthy moisture range
-var FERTILIZER_DRAIN_RATE := 0.001000   # 0.30 per 300 s
+const SEC_PER_DAY   := 86400.0
+const SEC_PER_MONTH := 86400.0 * 30.0
+const SEC_PER_YEAR  := 86400.0 * 30.0 * 12.0
 
-var PRUNE_DUE_AFTER := 900.0    # 3 game months until pruning urgency maxes out
-var REPOT_INTERVAL  := 7200.0   # 24 game months between repottings
+# Species subclasses must override these in _init()
+var MOISTURE_DRAIN_RATE   := 0.0
+var HEALTH_DAMAGE_RATE    := 0.0
+var HEALTH_REGEN_RATE     := 0.0
+var FERTILIZER_DRAIN_RATE := 1.0 / (SEC_PER_DAY * 90.0)
+
+# Pruning urgency maxes out after 3 months without pruning
+var PRUNE_DUE_AFTER := SEC_PER_MONTH * 3.0
+# Repotting due after 2 years by default
+var REPOT_INTERVAL  := SEC_PER_YEAR * 2.0
 
 @export var species: String = "Unknown"
 @export var age: float = 0.0

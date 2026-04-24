@@ -151,7 +151,7 @@ func _build_top_bar(canvas: CanvasLayer) -> void:
 	sep.custom_minimum_size.x = 8
 	hbox.add_child(sep)
 
-	var speed_options: Array = [["Pause", 0.0], ["1×", 1.0], ["10×", 10.0], ["100×", 100.0]]
+	var speed_options: Array = [["Pause", 0.0], ["Slow", 1440.0], ["Normal", 8640.0], ["Fast", 86400.0]]
 	for entry: Array in speed_options:
 		var btn := Button.new()
 		btn.text = entry[0]
@@ -308,6 +308,6 @@ func _on_speed_changed(_speed: float) -> void:
 
 
 func _update_speed_buttons() -> void:
-	var speeds: Array = [0.0, 1.0, 10.0, 100.0]
+	var speeds: Array = [0.0, 1440.0, 8640.0, 86400.0]
 	for i in _speed_buttons.size():
 		_speed_buttons[i].button_pressed = (GameClock.speed == speeds[i])
