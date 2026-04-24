@@ -30,7 +30,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_time_label.text = "%02d:%02d" % [GameClock.get_hour(), GameClock.get_minute()]
-	_date_label.text = "%s %d" % [GameClock.MONTH_NAMES[GameClock.get_month() - 1], GameClock.get_day()]
+	_date_label.text = GameClock.MONTH_NAMES[GameClock.get_month() - 1]
 	_sub_label.text  = "%s  ·  Year %d" % [_get_season_name(), GameClock.get_year()]
 
 
