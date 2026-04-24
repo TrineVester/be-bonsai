@@ -228,6 +228,16 @@ func _branch_tip(pos: Vector3, yaw_deg: float, tilt_deg: float, length: float) -
 	return pos + Vector3(sin(tilt_r) * sin(yaw_r), cos(tilt_r), sin(tilt_r) * cos(yaw_r)) * length
 
 
+# Returns the growth-animated effective length of a branch at the current age.
+# Matches the birth_t scaling in _add_branch() — use with _branch_tip() so
+# foliage tracks the growing branch tip during the 4-month birth animation.
+func _eff_len(born_months: float, full_length: float) -> float:
+	var age := get_age_months()
+	if age < born_months:
+		return 0.0
+	return full_length * clampf((age - born_months) / 4.0, 0.0, 1.0)
+
+
 # Foliage pad: flatten < 1.0 makes it wider than tall (bonsai pad shape).
 # sway_amp: amplitude in degrees for wind sway (0 = no sway)
 func _create_foliage_pad(pos: Vector3, radius: float, flatten: float, color: Color, sway_amp: float = 1.2) -> MeshInstance3D:

@@ -55,7 +55,11 @@ func _process(delta: float) -> void:
 
 	for i in 3:
 		_tree_nodes[i].position = _tree_nodes[i].position.lerp(_tree_targets[i], LERP_SPEED * delta)
-		if _camera:
+		if i == _held_index:
+			# Pin to top-right corner when the tree is being inspected
+			var vp := get_viewport().get_visible_rect().size
+			_tree_overlays[i].position = Vector2(vp.x - _tree_overlays[i].size.x - 8.0, 54.0)
+		elif _camera:
 			var screen_pos := _camera.unproject_position(
 				_tree_nodes[i].global_position + Vector3(0.0, -0.55, 0.0)
 			)
@@ -115,9 +119,14 @@ func _unhandled_input(event: InputEvent) -> void:
 				MOUSE_BUTTON_WHEEL_DOWN:
 					_view_zoom = clampf(_view_zoom + ZOOM_STEP, ZOOM_MIN, ZOOM_MAX)
 		else:
-			# ── No tree held: left-click to pick one ────────────────────────────
-			if event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-				_try_pick_tree(event.position)
+			# ── No tree held: left-click to pick one (on release, same as held case) ──
+			if event.button_index == MOUSE_BUTTON_LEFT:
+				if event.pressed:
+					_drag_origin = event.position
+					_is_dragging = false
+				else:
+					if not _is_dragging:
+						_try_pick_tree(event.position)
 
 	elif event is InputEventMouseMotion and _held_index >= 0 \
 			and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
