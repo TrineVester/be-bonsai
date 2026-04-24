@@ -163,13 +163,17 @@ func _build_sky() -> void:
 	env.glow_enabled = true
 	env.glow_intensity = 0.3
 	env.glow_bloom = 0.1
+	env.fog_enabled = true
+	env.fog_density = 0.008
+	env.fog_sky_affect = 0.4
 	world_env.environment = env
 	add_child(world_env)
 
 
 func _update_sky(t: float) -> void:
 	var lat_rad := deg_to_rad(LATITUDE_DEG)
-	var doy     := float((GameClock.get_month() - 1) * 30 + (GameClock.get_day() - 1))
+	# Approximate day-of-year from month (30 days per month approximation)
+	var doy     := float((GameClock.get_month() - 1) * 30)
 	var dec_rad := deg_to_rad(23.45 * sin(TAU * (doy - 81.0) / 360.0))
 
 	# Hour angle: t=0.5 is solar noon (HA=0), t=0/1 is midnight (HA=±π)
