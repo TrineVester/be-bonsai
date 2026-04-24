@@ -1,6 +1,7 @@
 extends Node
 
 signal speed_changed(speed: float)
+signal month_advanced(month: int, year: int)
 
 const SPEED_PAUSED  := 0.0
 const SPEED_SLOW    := 1440.0    # 1 game day per real minute
@@ -12,14 +13,19 @@ const MONTH_NAMES := [
 	"July", "August", "September", "October", "November", "December"
 ]
 
-var speed: float = SPEED_SLOW
+var speed: float = SPEED_NORMAL
 var paused_by_interaction := false
 var _elapsed: float = 0.0
+var _last_month: int = -1
 
 
 func _process(delta: float) -> void:
 	if not paused_by_interaction and speed != SPEED_PAUSED:
 		_elapsed += delta * speed
+		var m := get_month()
+		if _last_month != -1 and m != _last_month:
+			month_advanced.emit(m, get_year())
+		_last_month = m
 
 
 func get_scaled_delta(delta: float) -> float:

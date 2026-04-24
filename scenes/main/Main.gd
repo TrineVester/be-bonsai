@@ -3,8 +3,8 @@ extends Node3D
 const GreenhouseEnvironment := preload("res://scenes/greenhouse/GreenhouseEnvironment.gd")
 const ShelfMesh := preload("res://models/environment/ShelfMesh.gd")
 
-const TREE_POSITIONS   := [Vector3(-2.2, 0.2, 0.0), Vector3(0.0, 0.2, 0.0), Vector3(2.2, 0.2, 0.0)]
-const FOCUSED_POSITION := Vector3(0.0, 0.6, 1.0)
+const TREE_POSITIONS   := [Vector3(-2.2, 0.0, 0.0), Vector3(0.0, 0.0, 0.0), Vector3(2.2, 0.0, 0.0)]
+const FOCUSED_POSITION := Vector3(0.0, 0.4, 1.0)
 const LERP_SPEED       := 6.0
 
 var _trees:        Array[TreeData] = []
@@ -24,6 +24,7 @@ func _ready() -> void:
 	_setup_camera()
 	_create_trees()
 	_build_ui()
+	GameClock.month_advanced.connect(_on_month_advanced)
 
 
 func _process(delta: float) -> void:
@@ -71,6 +72,7 @@ func _create_trees() -> void:
 		var mesh_node: Node3D = mesh_classes[i].new()
 		mesh_node.position = TREE_POSITIONS[i]
 		add_child(mesh_node)
+		mesh_node.setup(tree)  # pass data so mesh reflects age + prune_count
 		_tree_nodes.append(mesh_node)
 
 		var pot_node: Node3D = default_pot_class.new()
@@ -161,6 +163,13 @@ func _do_operation(op: String) -> void:
 	var tree := _trees[_held_index]
 	match op:
 		"Water":     tree.water()
-		"Prune":     tree.prune()
+		"Prune":
+			tree.prune()
+			_tree_nodes[_held_index].rebuild()
 		"Fertilize": tree.fertilize()
 		"Repot":     tree.repot()
+
+
+func _on_month_advanced(_month: int, _year: int) -> void:
+	for i in 3:
+		_tree_nodes[i].rebuild()

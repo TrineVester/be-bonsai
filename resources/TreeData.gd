@@ -18,6 +18,7 @@ var REPOT_INTERVAL  := SEC_PER_YEAR * 2.0
 
 @export var species: String = "Unknown"
 @export var age: float = 0.0
+@export var prune_count: int = 0
 @export var moisture: float = 0.7
 @export var health: float = 1.0
 @export var fertilizer_level: float = 0.0
@@ -53,6 +54,7 @@ func water() -> void:
 
 func prune() -> void:
 	time_since_pruned = 0.0
+	prune_count += 1
 
 
 func fertilize() -> void:
