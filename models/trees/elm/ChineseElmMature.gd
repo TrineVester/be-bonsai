@@ -39,22 +39,29 @@ static func build(mesh: TreeMeshBase, bark: Color, bark2: Color, foliage: Color,
 	if mesh.is_winter():
 		return
 
-	# Flat pads at branch tips — inset so pad wraps tip, skip pruned branches
+	# Flat pads at branch tips — only once branch has grown past the inset point
 	var pad := lerpf(0.42, 0.50, t) * (1.0 - compact * 0.52)
-	if age >= 12.0 and not mesh._data.is_branch_pruned("b_low_r"):
-		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.42, 0.0),  90.0, btilt,        mesh._eff_len(12.0, blen)        - pad * 0.5),  pad,        0.27, foliage,  2.8))
-	if age >= 12.0 and not mesh._data.is_branch_pruned("b_low_l"):
-		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.42, 0.0), 270.0, btilt,        mesh._eff_len(12.0, blen)        - pad * 0.5),  pad,        0.27, foliage2, 2.8))
-	if age >= 18.0 and not mesh._data.is_branch_pruned("b_mid_f"):
-		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.54, 0.0),   0.0, btilt,        mesh._eff_len(18.0, blen * 0.86) - pad * 0.43), pad * 0.86, 0.28, foliage2, 2.6))
-	if age >= 18.0 and not mesh._data.is_branch_pruned("b_mid_b"):
-		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.54, 0.0), 180.0, btilt,        mesh._eff_len(18.0, blen * 0.86) - pad * 0.43), pad * 0.86, 0.28, foliage,  2.6))
-	if age >= 26.0 and not mesh._data.is_branch_pruned("b_up_45"):
-		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.64, 0.0),  45.0, btilt * 0.88, mesh._eff_len(26.0, blen * 0.70) - pad * 0.35), pad * 0.70, 0.29, foliage,  2.6))
-	if age >= 36.0 and not mesh._data.is_branch_pruned("b_up_225"):
-		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.64, 0.0), 225.0, btilt * 0.88, mesh._eff_len(36.0, blen * 0.68) - pad * 0.34), pad * 0.68, 0.29, foliage2, 2.6))
-	if age >= 40.0 and not mesh._data.is_branch_pruned("b_up_135"):
-		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.74, 0.0), 135.0, btilt * 0.75, mesh._eff_len(40.0, blen * 0.55) - pad * 0.34), pad * 0.68, 0.30, foliage2, 3.0))
-	if age >= 44.0 and not mesh._data.is_branch_pruned("b_up_315"):
-		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.74, 0.0), 315.0, btilt * 0.75, mesh._eff_len(44.0, blen * 0.52) - pad * 0.34), pad * 0.68, 0.30, foliage,  3.0))
-	mesh._visual.add_child(mesh._create_foliage_pad(Vector3(0.0, h * 1.04, 0.0), pad * 0.80, 0.28, foliage, 2.5))
+	var eff_lr := mesh._eff_len(12.0, blen)
+	var eff_mf := mesh._eff_len(18.0, blen * 0.86)
+	var eff_u4 := mesh._eff_len(26.0, blen * 0.70)
+	var eff_u2 := mesh._eff_len(36.0, blen * 0.68)
+	var eff_13 := mesh._eff_len(40.0, blen * 0.55)
+	var eff_31 := mesh._eff_len(44.0, blen * 0.52)
+	if eff_lr > pad * 0.5  and not mesh._data.is_branch_pruned("b_low_r"):
+		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.42, 0.0),  90.0, btilt,        eff_lr - pad * 0.5),  pad,        0.27, foliage,  2.8))
+	if eff_lr > pad * 0.5  and not mesh._data.is_branch_pruned("b_low_l"):
+		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.42, 0.0), 270.0, btilt,        eff_lr - pad * 0.5),  pad,        0.27, foliage2, 2.8))
+	if eff_mf > pad * 0.43 and not mesh._data.is_branch_pruned("b_mid_f"):
+		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.54, 0.0),   0.0, btilt,        eff_mf - pad * 0.43), pad * 0.86, 0.28, foliage2, 2.6))
+	if eff_mf > pad * 0.43 and not mesh._data.is_branch_pruned("b_mid_b"):
+		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.54, 0.0), 180.0, btilt,        eff_mf - pad * 0.43), pad * 0.86, 0.28, foliage,  2.6))
+	if eff_u4 > pad * 0.35 and not mesh._data.is_branch_pruned("b_up_45"):
+		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.64, 0.0),  45.0, btilt * 0.88, eff_u4 - pad * 0.35), pad * 0.70, 0.29, foliage,  2.6))
+	if eff_u2 > pad * 0.34 and not mesh._data.is_branch_pruned("b_up_225"):
+		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.64, 0.0), 225.0, btilt * 0.88, eff_u2 - pad * 0.34), pad * 0.68, 0.29, foliage2, 2.6))
+	if eff_13 > pad * 0.34 and not mesh._data.is_branch_pruned("b_up_135"):
+		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.74, 0.0), 135.0, btilt * 0.75, eff_13 - pad * 0.34), pad * 0.68, 0.30, foliage2, 3.0))
+	if eff_31 > pad * 0.34 and not mesh._data.is_branch_pruned("b_up_315"):
+		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.74, 0.0), 315.0, btilt * 0.75, eff_31 - pad * 0.34), pad * 0.68, 0.30, foliage,  3.0))
+	# Apex starts matching Developing exit (0.32) and grows gently with the umbrella canopy
+	mesh._visual.add_child(mesh._create_foliage_pad(Vector3(0.0, h * 1.04, 0.0), lerpf(0.32, pad * 0.78, t), 0.28, foliage, 2.5))
