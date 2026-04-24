@@ -15,7 +15,8 @@ const MONTH_NAMES := [
 
 var speed: float = SPEED_NORMAL
 var paused_by_interaction := false
-var _elapsed: float = 0.0
+# Start in April (month 4) — active growing season for an engaging first session
+var _elapsed: float = 86400.0 * 3.0
 var _last_month: int = -1
 
 
