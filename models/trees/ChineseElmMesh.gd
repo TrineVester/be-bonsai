@@ -3,8 +3,10 @@ extends TreeMeshBase
 
 # Chinese Elm: wide flat umbrella canopy, reddish flaky bark, many near-horizontal branches
 
-const BARK_COLOR    := Color(0.42, 0.24, 0.12)
-const FOLIAGE_COLOR := Color(0.27, 0.50, 0.20)
+const BARK_COLOR    := Color(0.44, 0.26, 0.13)   # warm brown outer bark
+const BARK_INNER    := Color(0.66, 0.46, 0.22)   # orange-tan exposed inner bark (mottled patches)
+const FOLIAGE_COLOR := Color(0.24, 0.48, 0.18)   # fresh green fine leaves
+const FOLIAGE_LIGHT := Color(0.32, 0.56, 0.24)   # lighter highlight for outer/top pads
 
 
 func build_tree() -> void:
@@ -13,11 +15,11 @@ func build_tree() -> void:
 	if age < 3.0:
 		ChineseElmSpire.build(self, BARK_COLOR, FOLIAGE_COLOR, age, compact)
 	elif age < 12.0:
-		ChineseElmYoung.build(self, BARK_COLOR, FOLIAGE_COLOR, age, compact)
+		ChineseElmYoung.build(self, BARK_COLOR, FOLIAGE_COLOR, FOLIAGE_LIGHT, age, compact)
 	elif age < 36.0:
-		ChineseElmDeveloping.build(self, BARK_COLOR, FOLIAGE_COLOR, age, compact)
+		ChineseElmDeveloping.build(self, BARK_COLOR, FOLIAGE_COLOR, FOLIAGE_LIGHT, age, compact)
 	else:
-		ChineseElmMature.build(self, BARK_COLOR, FOLIAGE_COLOR, age, compact)
+		ChineseElmMature.build(self, BARK_COLOR, BARK_INNER, FOLIAGE_COLOR, FOLIAGE_LIGHT, age, compact)
 
 
 func _build_spire() -> void:

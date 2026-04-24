@@ -3,8 +3,11 @@ extends TreeMeshBase
 
 # Ficus: smooth pale gray bark, wide dome canopy, 3 radiating primary branches
 
-const BARK_COLOR    := Color(0.68, 0.66, 0.60)
-const FOLIAGE_COLOR := Color(0.22, 0.47, 0.18)
+const BARK_COLOR    := Color(0.72, 0.70, 0.65)   # smooth pale grey (young)
+const BARK_MATURE   := Color(0.78, 0.76, 0.72)   # near-silver at maturity
+const FOLIAGE_COLOR := Color(0.20, 0.45, 0.16)   # rich fresh green
+const FOLIAGE_LIGHT := Color(0.28, 0.54, 0.22)   # lighter highlight for clusters
+const ROOT_COLOR    := Color(0.60, 0.58, 0.54)   # aerial roots slightly darker
 
 
 func build_tree() -> void:
@@ -13,11 +16,11 @@ func build_tree() -> void:
 	if age < 3.0:
 		FicusSpire.build(self, BARK_COLOR, FOLIAGE_COLOR, age, compact)
 	elif age < 12.0:
-		FicusYoung.build(self, BARK_COLOR, FOLIAGE_COLOR, age, compact)
+		FicusYoung.build(self, BARK_COLOR, FOLIAGE_COLOR, FOLIAGE_LIGHT, age, compact)
 	elif age < 36.0:
-		FicusDeveloping.build(self, BARK_COLOR, FOLIAGE_COLOR, age, compact)
+		FicusDeveloping.build(self, BARK_COLOR, FOLIAGE_COLOR, FOLIAGE_LIGHT, ROOT_COLOR, age, compact)
 	else:
-		FicusMature.build(self, BARK_COLOR, FOLIAGE_COLOR, age, compact)
+		FicusMature.build(self, BARK_MATURE, FOLIAGE_COLOR, FOLIAGE_LIGHT, ROOT_COLOR, age, compact)
 
 
 func _build_spire() -> void:

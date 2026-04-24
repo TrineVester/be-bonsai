@@ -3,8 +3,9 @@ extends TreeMeshBase
 
 # Juniper: tall conical silhouette, stacked horizontal foliage layers, reddish bark
 
-const BARK_COLOR    := Color(0.28, 0.17, 0.09)
-const FOLIAGE_COLOR := Color(0.13, 0.33, 0.13)
+const BARK_COLOR    := Color(0.26, 0.15, 0.08)   # deep fibrous reddish-brown
+const FOLIAGE_COLOR := Color(0.09, 0.26, 0.11)   # dark blue-green needle spray
+const FOLIAGE_LIGHT := Color(0.12, 0.31, 0.14)   # slightly lighter highlight tier
 
 
 func build_tree() -> void:
@@ -15,9 +16,9 @@ func build_tree() -> void:
 	elif age < 12.0:
 		JuniperYoung.build(self, BARK_COLOR, FOLIAGE_COLOR, age, compact)
 	elif age < 36.0:
-		JuniperDeveloping.build(self, BARK_COLOR, FOLIAGE_COLOR, age, compact)
+		JuniperDeveloping.build(self, BARK_COLOR, FOLIAGE_COLOR, FOLIAGE_LIGHT, age, compact)
 	else:
-		JuniperMature.build(self, BARK_COLOR, FOLIAGE_COLOR, age, compact)
+		JuniperMature.build(self, BARK_COLOR, FOLIAGE_COLOR, FOLIAGE_LIGHT, age, compact)
 
 
 # Stage 0: bare seedling spire — just a thin trunk and tiny apex tuft
