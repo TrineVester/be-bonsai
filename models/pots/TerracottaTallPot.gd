@@ -10,3 +10,4 @@ func build_pot() -> void:
 	var body_height := 0.52
 	add_child(_create_pot_body(body_height, 0.22, 0.14, body_color))
 	add_child(_create_pot_rim(0.22, body_height, rim_color))
+	add_child(_create_soil_disc(0.22, body_height))
