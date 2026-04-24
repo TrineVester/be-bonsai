@@ -39,7 +39,7 @@ func on_time_passed(dt: float) -> void:
 
 	if moisture < 0.2:
 		health -= HEALTH_DAMAGE_RATE * dt
-	elif moisture > 0.3 and moisture < 0.9:
+	elif moisture >= 0.25 and moisture < 0.95:
 		health = minf(1.0, health + HEALTH_REGEN_RATE * dt)
 
 	health = clampf(health, 0.0, 1.0)
@@ -55,16 +55,29 @@ func water() -> void:
 func prune() -> void:
 	time_since_pruned = 0.0
 	prune_count += 1
+	# Pruning in summer (peak growth) stresses the tree slightly
+	var m := GameClock.get_month()
+	if m in [6, 7, 8]:
+		health = maxf(0.0, health - 0.04)
 
 
 func fertilize() -> void:
 	time_since_fertilized = 0.0
-	fertilizer_level = minf(1.0, fertilizer_level + 0.6)
+	# Fertilizing in winter is mostly wasted — tree cannot absorb nutrients
+	var m := GameClock.get_month()
+	if m in [12, 1, 2]:
+		fertilizer_level = minf(1.0, fertilizer_level + 0.15)
+	else:
+		fertilizer_level = minf(1.0, fertilizer_level + 0.6)
 
 
 func repot() -> void:
 	time_since_repotted = 0.0
 	needs_repot = false
+	# Repotting outside early spring (months 2–4) causes slight stress
+	var m := GameClock.get_month()
+	if not m in [2, 3, 4]:
+		health = maxf(0.0, health - 0.06)
 
 
 func get_prune_urgency() -> float:
