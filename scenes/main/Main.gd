@@ -7,6 +7,7 @@ const LERP_SPEED := 6.0
 var _trees: Array[TreeData] = []
 var _tree_nodes: Array[Node3D] = []
 var _tree_targets: Array[Vector3] = []
+var _pot_nodes: Array[Node3D] = []
 
 var _held_index: int = -1
 
@@ -83,6 +84,8 @@ func _setup_world() -> void:
 func _create_trees() -> void:
 	var data_instances: Array[TreeData] = [JuniperData.new(), FicusData.new(), ChineseElmData.new()]
 	var mesh_classes: Array = [JuniperMesh, FicusMesh, ChineseElmMesh]
+	# Default pot for each tree — can be swapped independently
+	var default_pot_class := TerracottaClassicPot
 
 	for i in 3:
 		var tree: TreeData = data_instances[i]
@@ -95,6 +98,11 @@ func _create_trees() -> void:
 		mesh_node.position = TREE_POSITIONS[i]
 		add_child(mesh_node)
 		_tree_nodes.append(mesh_node)
+
+		var pot_node: Node3D = default_pot_class.new()
+		pot_node.position = Vector3.ZERO
+		mesh_node.add_child(pot_node)
+		_pot_nodes.append(pot_node)
 
 		var label := Label3D.new()
 		label.text = tree.species
