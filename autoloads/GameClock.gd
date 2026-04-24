@@ -60,6 +60,10 @@ func get_date_string() -> String:
 	return "%s %d, Year %d" % [MONTH_NAMES[get_month() - 1], get_day(), get_year()]
 
 
+func get_day_fraction() -> float:
+	return fmod(_elapsed, 86400.0) / 86400.0
+
+
 func set_speed(new_speed: float) -> void:
 	speed = new_speed
 	speed_changed.emit(speed)
