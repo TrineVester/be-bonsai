@@ -51,11 +51,11 @@ func get_day() -> int:
 
 
 func get_month() -> int:
-	return (int(_elapsed / 2592000.0) % 12) + 1
+	return (int(_elapsed / 86400.0) % 12) + 1
 
 
 func get_year() -> int:
-	return int(_elapsed / 31104000.0) + 1
+	return int(_elapsed / 1036800.0) + 1
 
 
 func get_time_string() -> String:
@@ -63,7 +63,7 @@ func get_time_string() -> String:
 
 
 func get_date_string() -> String:
-	return "%s %d, Year %d" % [MONTH_NAMES[get_month() - 1], get_day(), get_year()]
+	return "%s, Year %d" % [MONTH_NAMES[get_month() - 1], get_year()]
 
 
 func get_day_fraction() -> float:

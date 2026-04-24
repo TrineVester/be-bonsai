@@ -2,8 +2,8 @@ class_name TreeData
 extends Resource
 
 const SEC_PER_DAY   := 86400.0
-const SEC_PER_MONTH := 86400.0 * 30.0
-const SEC_PER_YEAR  := 86400.0 * 30.0 * 12.0
+const SEC_PER_MONTH := 86400.0
+const SEC_PER_YEAR  := 86400.0 * 12.0
 
 # Species subclasses must override these in _init()
 var MOISTURE_DRAIN_RATE   := 0.0
