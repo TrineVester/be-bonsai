@@ -1,22 +1,21 @@
 extends Node3D
 
-const TREE_POSITIONS  := [Vector3(-2.2, 0.2, 0.0), Vector3(0.0, 0.2, 0.0), Vector3(2.2, 0.2, 0.0)]
-const FOCUSED_POSITION := Vector3(0.0, 0.6, 1.0)
-const LERP_SPEED := 6.0
+const GreenhouseEnvironment := preload("res://scenes/greenhouse/GreenhouseEnvironment.gd")
+const ShelfMesh := preload("res://models/environment/ShelfMesh.gd")
 
-var _trees: Array[TreeData] = []
-var _tree_nodes: Array[Node3D] = []
-var _tree_targets: Array[Vector3] = []
-var _pot_nodes: Array[Node3D] = []
+const TREE_POSITIONS   := [Vector3(-2.2, 0.2, 0.0), Vector3(0.0, 0.2, 0.0), Vector3(2.2, 0.2, 0.0)]
+const FOCUSED_POSITION := Vector3(0.0, 0.6, 1.0)
+const LERP_SPEED       := 6.0
+
+var _trees:        Array[TreeData] = []
+var _tree_nodes:   Array[Node3D]   = []
+var _tree_targets: Array[Vector3]  = []
+var _pot_nodes:    Array[Node3D]   = []
 
 var _held_index: int = -1
 
-var _speed_buttons: Array[Button] = []
-var _action_panel: PanelContainer
-var _tree_overlays: Array[Control] = []
-var _stat_bars: Array[Dictionary] = []
-var _analog_clock: Control
-var _calendar_page: Control
+var _tree_overlays: Array[TreeStatOverlay] = []
+var _action_panel:  ActionPanel
 
 
 func _ready() -> void:
@@ -25,8 +24,6 @@ func _ready() -> void:
 	_setup_camera()
 	_create_trees()
 	_build_ui()
-	GameClock.speed_changed.connect(_on_speed_changed)
-	_update_speed_buttons()
 
 
 func _process(delta: float) -> void:
@@ -44,7 +41,7 @@ func _process(delta: float) -> void:
 			_tree_overlays[i].position = screen_pos - Vector2(_tree_overlays[i].size.x * 0.5, 0.0)
 		_tree_overlays[i].visible = (_held_index < 0 or _held_index == i)
 		if _tree_overlays[i].visible:
-			_refresh_tree_overlay(i)
+			_tree_overlays[i].refresh(_trees[i])
 
 
 func _input(event: InputEvent) -> void:
@@ -62,7 +59,6 @@ func _setup_camera() -> void:
 func _create_trees() -> void:
 	var data_instances: Array[TreeData] = [JuniperData.new(), FicusData.new(), ChineseElmData.new()]
 	var mesh_classes: Array = [JuniperMesh, FicusMesh, ChineseElmMesh]
-	# Default pot for each tree — can be swapped independently
 	var default_pot_class := TerracottaClassicPot
 
 	for i in 3:
@@ -101,186 +97,21 @@ func _create_trees() -> void:
 		mesh_node.add_child(area)
 
 
-# ── UI ────────────────────────────────────────────────────────────────────────
-
 func _build_ui() -> void:
 	var canvas := CanvasLayer.new()
 	add_child(canvas)
-	_build_top_bar(canvas)
-	_build_tree_overlays(canvas)
-	_build_action_panel(canvas)
 
+	canvas.add_child(TopBar.new())
 
-func _build_top_bar(canvas: CanvasLayer) -> void:
-	var outer := HBoxContainer.new()
-	outer.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	outer.add_theme_constant_override("separation", 8)
-	outer.offset_left = 8.0
-	outer.offset_top  = 8.0
-	canvas.add_child(outer)
+	for _i in 3:
+		var overlay := TreeStatOverlay.new()
+		canvas.add_child(overlay)
+		_tree_overlays.append(overlay)
 
-	var card := PanelContainer.new()
-	var card_style := StyleBoxFlat.new()
-	card_style.bg_color            = Color(0.08, 0.08, 0.10, 0.82)
-	card_style.corner_radius_top_left     = 8
-	card_style.corner_radius_top_right    = 8
-	card_style.corner_radius_bottom_left  = 8
-	card_style.corner_radius_bottom_right = 8
-	card_style.content_margin_left   = 10.0
-	card_style.content_margin_right  = 10.0
-	card_style.content_margin_top    = 8.0
-	card_style.content_margin_bottom = 8.0
-	card.add_theme_stylebox_override("panel", card_style)
-	outer.add_child(card)
-
-	var card_hbox := HBoxContainer.new()
-	card_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	card_hbox.add_theme_constant_override("separation", 10)
-	card.add_child(card_hbox)
-
-	_analog_clock = AnalogClock.new()
-	_analog_clock.custom_minimum_size = Vector2(48.0, 48.0)
-	card_hbox.add_child(_analog_clock)
-
-	var divider := ColorRect.new()
-	divider.color = Color(1.0, 1.0, 1.0, 0.12)
-	divider.custom_minimum_size = Vector2(1.0, 36.0)
-	card_hbox.add_child(divider)
-
-	_calendar_page = CalendarPage.new()
-	card_hbox.add_child(_calendar_page)
-
-	var sep := Control.new()
-	sep.custom_minimum_size.x = 16.0
-	outer.add_child(sep)
-
-	var speed_card := PanelContainer.new()
-	speed_card.add_theme_stylebox_override("panel", card_style)
-	outer.add_child(speed_card)
-
-	var speed_hbox := HBoxContainer.new()
-	speed_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	speed_hbox.add_theme_constant_override("separation", 4)
-	speed_card.add_child(speed_hbox)
-
-	var speed_options: Array = [["Pause", 0.0], ["Slow", 1440.0], ["Normal", 8640.0], ["Fast", 86400.0]]
-
-	var style_normal := StyleBoxFlat.new()
-	style_normal.bg_color = Color(0.0, 0.0, 0.0, 0.0)
-	style_normal.corner_radius_top_left     = 5
-	style_normal.corner_radius_top_right    = 5
-	style_normal.corner_radius_bottom_left  = 5
-	style_normal.corner_radius_bottom_right = 5
-	style_normal.content_margin_left   = 8.0
-	style_normal.content_margin_right  = 8.0
-	style_normal.content_margin_top    = 4.0
-	style_normal.content_margin_bottom = 4.0
-
-	var style_pressed := StyleBoxFlat.new()
-	style_pressed.bg_color = Color(1.0, 1.0, 1.0, 0.12)
-	style_pressed.corner_radius_top_left     = 5
-	style_pressed.corner_radius_top_right    = 5
-	style_pressed.corner_radius_bottom_left  = 5
-	style_pressed.corner_radius_bottom_right = 5
-	style_pressed.content_margin_left   = 8.0
-	style_pressed.content_margin_right  = 8.0
-	style_pressed.content_margin_top    = 4.0
-	style_pressed.content_margin_bottom = 4.0
-
-	for entry: Array in speed_options:
-		var btn := Button.new()
-		btn.text = entry[0]
-		btn.custom_minimum_size = Vector2(58, 30)
-		btn.toggle_mode = true
-		btn.flat = true
-		btn.add_theme_stylebox_override("normal",        style_normal)
-		btn.add_theme_stylebox_override("hover",         style_normal)
-		btn.add_theme_stylebox_override("pressed",       style_pressed)
-		btn.add_theme_stylebox_override("focus",         style_normal)
-		btn.add_theme_color_override("font_color",              Color(1.0, 1.0, 1.0, 0.45))
-		btn.add_theme_color_override("font_hover_color",        Color(1.0, 1.0, 1.0, 0.75))
-		btn.add_theme_color_override("font_pressed_color",      Color(1.0, 1.0, 1.0, 1.00))
-		btn.add_theme_color_override("font_focus_color",        Color(1.0, 1.0, 1.0, 0.45))
-		btn.pressed.connect(GameClock.set_speed.bind(entry[1]))
-		speed_hbox.add_child(btn)
-		_speed_buttons.append(btn)
-
-
-func _build_tree_overlays(canvas: CanvasLayer) -> void:
-	var stat_names  := ["Water", "Health", "Fert", "Prune", "Repot"]
-	var stat_colors := [
-		Color(0.25, 0.55, 1.00),
-		Color(0.25, 0.85, 0.35),
-		Color(1.00, 0.60, 0.20),
-		Color(1.00, 0.90, 0.20),
-		Color(0.70, 0.30, 1.00),
-	]
-
-	for i in 3:
-		var bg := PanelContainer.new()
-		bg.custom_minimum_size = Vector2(136.0, 0.0)
-		canvas.add_child(bg)
-		_tree_overlays.append(bg)
-
-		var vbox := VBoxContainer.new()
-		vbox.add_theme_constant_override("separation", 2)
-		bg.add_child(vbox)
-
-		var bars: Dictionary = {}
-		for j in stat_names.size():
-			var row := HBoxContainer.new()
-			row.add_theme_constant_override("separation", 4)
-			vbox.add_child(row)
-
-			var lbl := Label.new()
-			lbl.text = stat_names[j]
-			lbl.custom_minimum_size.x = 38.0
-			lbl.add_theme_font_size_override("font_size", 10)
-			row.add_child(lbl)
-
-			var bar := ProgressBar.new()
-			bar.max_value = 1.0
-			bar.custom_minimum_size = Vector2(76.0, 10.0)
-			bar.show_percentage = false
-			var style := StyleBoxFlat.new()
-			style.bg_color = stat_colors[j]
-			bar.add_theme_stylebox_override("fill", style)
-			row.add_child(bar)
-
-			bars[stat_names[j]] = bar
-
-		_stat_bars.append(bars)
-
-
-func _build_action_panel(canvas: CanvasLayer) -> void:
-	_action_panel = PanelContainer.new()
-	_action_panel.visible = false
-	_action_panel.anchor_left   = 0.0
-	_action_panel.anchor_right  = 1.0
-	_action_panel.anchor_top    = 1.0
-	_action_panel.anchor_bottom = 1.0
-	_action_panel.offset_top    = -56.0
-	_action_panel.offset_bottom = -4.0
+	_action_panel = ActionPanel.new()
+	_action_panel.operation_requested.connect(_do_operation)
+	_action_panel.put_back_requested.connect(_put_back_tree)
 	canvas.add_child(_action_panel)
-
-	var hbox := HBoxContainer.new()
-	hbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	hbox.add_theme_constant_override("separation", 8)
-	_action_panel.add_child(hbox)
-
-	for op: String in ["Water", "Prune", "Fertilize", "Repot"]:
-		var btn := Button.new()
-		btn.text = op
-		btn.custom_minimum_size = Vector2(80, 36)
-		btn.pressed.connect(_do_operation.bind(op))
-		hbox.add_child(btn)
-
-	var put_back := Button.new()
-	put_back.text = "← Put Back"
-	put_back.custom_minimum_size = Vector2(90, 36)
-	put_back.pressed.connect(_put_back_tree)
-	hbox.add_child(put_back)
 
 
 # ── Actions ───────────────────────────────────────────────────────────────────
@@ -333,25 +164,3 @@ func _do_operation(op: String) -> void:
 		"Prune":     tree.prune()
 		"Fertilize": tree.fertilize()
 		"Repot":     tree.repot()
-
-
-# ── Refresh ───────────────────────────────────────────────────────────────────
-
-func _refresh_tree_overlay(i: int) -> void:
-	var tree  := _trees[i]
-	var bars: Dictionary = _stat_bars[i]
-	bars["Water"].value  = tree.moisture
-	bars["Health"].value = tree.health
-	bars["Fert"].value   = tree.fertilizer_level
-	bars["Prune"].value  = tree.get_prune_urgency()
-	bars["Repot"].value  = tree.get_repot_urgency()
-
-
-func _on_speed_changed(_speed: float) -> void:
-	_update_speed_buttons()
-
-
-func _update_speed_buttons() -> void:
-	var speeds: Array = [0.0, 1440.0, 8640.0, 86400.0]
-	for i in _speed_buttons.size():
-		_speed_buttons[i].button_pressed = (GameClock.speed == speeds[i])
