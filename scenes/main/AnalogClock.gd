@@ -17,8 +17,8 @@ func _draw() -> void:
 	for h in 12:
 		var angle := h / 12.0 * TAU - PI * 0.5
 		var dir   := Vector2(cos(angle), sin(angle))
-		var len   := 5.0 if (h % 3 == 0) else 3.0
-		draw_line(center + dir * (r - len), center + dir * r, dim, 1.5)
+		var tick_len := 5.0 if (h % 3 == 0) else 3.0
+		draw_line(center + dir * (r - tick_len), center + dir * r, dim, 1.5)
 
 	var hour   := GameClock.get_hour() % 12
 	var minute := GameClock.get_minute()
