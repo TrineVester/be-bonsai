@@ -1,7 +1,7 @@
 extends Node3D
 
 const TREE_POSITIONS  := [Vector3(-2.2, 0.2, 0.0), Vector3(0.0, 0.2, 0.0), Vector3(2.2, 0.2, 0.0)]
-const FOCUSED_POSITION := Vector3(0.0, 0.6, 3.2)
+const FOCUSED_POSITION := Vector3(0.0, 0.6, 2.2)
 const LERP_SPEED := 6.0
 
 var _trees: Array[TreeData] = []
