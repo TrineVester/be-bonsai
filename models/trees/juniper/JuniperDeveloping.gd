@@ -22,13 +22,17 @@ static func build(mesh: TreeMeshBase, bark: Color, foliage: Color, foliage2: Col
 	# Juniper branches tilt steeply — droop from weight then pads face upward
 	var btilt := lerpf(72.0, 82.0, t) * (1.0 - compact * 0.18)
 	var bsr   := lerpf(0.016, 0.024, t)
-	mesh._visual.add_child(mesh._create_branch(Vector3(0.0, h * 0.32, 0.0),  90.0, btilt, blen,        bsr,        bark))
-	mesh._visual.add_child(mesh._create_branch(Vector3(0.0, h * 0.32, 0.0), 270.0, btilt, blen * 0.90, bsr,        bark))
-	mesh._visual.add_child(mesh._create_branch(Vector3(0.0, h * 0.50, 0.0),   0.0, btilt, blen * 0.78, bsr * 0.80, bark))
-	mesh._visual.add_child(mesh._create_branch(Vector3(0.0, h * 0.50, 0.0), 180.0, btilt, blen * 0.72, bsr * 0.80, bark))
+	mesh._add_branch("b_low_r", 12.0, Vector3(0.0, h * 0.32, 0.0),  90.0, btilt, blen,        bsr,        bark)
+	mesh._add_branch("b_low_l", 12.0, Vector3(0.0, h * 0.32, 0.0), 270.0, btilt, blen * 0.90, bsr,        bark)
+	mesh._add_branch("b_mid_f", 18.0, Vector3(0.0, h * 0.50, 0.0),   0.0, btilt, blen * 0.78, bsr * 0.80, bark)
+	mesh._add_branch("b_mid_b", 18.0, Vector3(0.0, h * 0.50, 0.0), 180.0, btilt, blen * 0.72, bsr * 0.80, bark)
 
-	# Three flat horizontal tiers — clearly separated with visible gaps
+	# Foliage pads sit at branch tips — born with their branch, plus a fixed apex pad
 	var pad := lerpf(0.28, 0.42, t) * (1.0 - compact * 0.40)
-	mesh._visual.add_child(mesh._create_foliage_pad(Vector3(0.0, h * 0.40, 0.0), pad,        0.38, foliage,  0.7))
-	mesh._visual.add_child(mesh._create_foliage_pad(Vector3(0.0, h * 0.58, 0.0), pad * 0.75, 0.38, foliage2, 0.75))
-	mesh._visual.add_child(mesh._create_foliage_pad(Vector3(0.0, h * 0.78, 0.0), pad * 0.50, 0.40, foliage,  0.65))
+	if age >= 12.0:
+		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.32, 0.0),  90.0, btilt, blen),        pad,        0.38, foliage,  0.7))
+		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.32, 0.0), 270.0, btilt, blen * 0.90), pad * 0.90, 0.38, foliage2, 0.75))
+	if age >= 18.0:
+		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.50, 0.0),   0.0, btilt, blen * 0.78), pad * 0.75, 0.38, foliage2, 0.75))
+		mesh._visual.add_child(mesh._create_foliage_pad(mesh._branch_tip(Vector3(0.0, h * 0.50, 0.0), 180.0, btilt, blen * 0.72), pad * 0.72, 0.38, foliage,  0.65))
+	mesh._visual.add_child(mesh._create_foliage_pad(Vector3(0.0, h * 0.92, 0.0), pad * 0.50, 0.40, foliage, 0.65))

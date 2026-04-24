@@ -11,6 +11,12 @@ var _sway_nodes: Array = []
 # Set true temporarily (e.g. on interaction) to boost amplitude
 var _sway_boost: float = 0.0
 
+# Tree index (set via setup) stored on branch Area3D meta for click detection
+var _tree_idx: int = -1
+# Maps branch_id → {mi: MeshInstance3D, node: Node3D, area: Area3D}
+var _branch_nodes: Dictionary = {}
+var _selected_branch_id: String = ""
+
 
 func _ready() -> void:
 	_visual = Node3D.new()
@@ -35,8 +41,9 @@ func _process(delta: float) -> void:
 
 
 # Call this from Main.gd after adding to scene tree
-func setup(data: TreeData) -> void:
+func setup(data: TreeData, tree_idx: int = -1) -> void:
 	_data = data
+	_tree_idx = tree_idx
 	rebuild()
 
 
@@ -47,6 +54,8 @@ func rebuild() -> void:
 	for child in _visual.get_children():
 		child.queue_free()
 	_sway_nodes.clear()
+	_branch_nodes.clear()
+	_selected_branch_id = ""
 	build_tree()
 
 
@@ -57,6 +66,29 @@ func trigger_sway_boost() -> void:
 
 func build_tree() -> void:
 	pass  # Override in species subclass
+
+
+# ─── Branch Selection ───────────────────────────────────────────────────────────────────
+func select_branch(id: String) -> void:
+	deselect_branch()
+	_selected_branch_id = id
+	if _branch_nodes.has(id):
+		var mi: MeshInstance3D = _branch_nodes[id]["mi"]
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = Color(0.92, 0.76, 0.18)  # golden highlight
+		mat.roughness = 0.65
+		mi.material_override = mat
+
+
+func deselect_branch() -> void:
+	if _selected_branch_id != "" and _branch_nodes.has(_selected_branch_id):
+		var mi: MeshInstance3D = _branch_nodes[_selected_branch_id]["mi"]
+		mi.material_override = null
+	_selected_branch_id = ""
+
+
+func get_selected_branch() -> String:
+	return _selected_branch_id
 
 
 func get_age_months() -> float:
@@ -133,6 +165,67 @@ func _create_branch(pos: Vector3, yaw_deg: float, tilt_deg: float, length: float
 	mi.position.y = length * 0.5
 	node.add_child(mi)
 	return node
+
+
+# Shaped branch with per-branch state: birth animation, prune check, wiring override.
+# Adds a clickable Area3D on collision layer 2. Populates _branch_nodes[id].
+# Call from stage build() functions instead of _create_branch() + add_child().
+func _add_branch(id: String, born_months: float, pos: Vector3, yaw_deg: float, tilt_deg: float, length: float, base_radius: float, color: Color) -> void:
+	var age := get_age_months()
+	if age < born_months:
+		return  # branch hasn't grown yet
+
+	# Soft birth: grows from 0 → full over 4 months
+	var birth_t := clampf((age - born_months) / 4.0, 0.0, 1.0)
+	var eff_len    := length * birth_t
+	var eff_radius := base_radius * birth_t
+	if eff_len < 0.015:
+		return
+
+	# Check for pruning — show a tiny bleached stub
+	if _data and _data.is_branch_pruned(id):
+		var stub := _create_jin(pos, yaw_deg, tilt_deg, minf(0.10, length * 0.15))
+		_visual.add_child(stub)
+		return
+
+	# Apply wiring overrides (future shaping feature)
+	var eff_yaw  := yaw_deg
+	var eff_tilt := tilt_deg
+	if _data:
+		var angles := _data.get_branch_angles(id, yaw_deg, tilt_deg)
+		eff_yaw  = angles[0]
+		eff_tilt = angles[1]
+
+	var node: Node3D = _create_branch(pos, eff_yaw, eff_tilt, eff_len, eff_radius, color)
+	var mi := node.get_child(0) as MeshInstance3D
+
+	# Clickable area for per-branch pruning (collision layer 2, detected only when tree held)
+	var area := Area3D.new()
+	area.collision_layer = 2
+	area.collision_mask  = 0
+	area.set_meta("branch_id", id)
+	if _tree_idx >= 0:
+		area.set_meta("tree_index", _tree_idx)
+	var shape_node := CollisionShape3D.new()
+	var cap := CapsuleShape3D.new()
+	cap.height = maxf(0.06, eff_len)
+	cap.radius = 0.10
+	shape_node.shape = cap
+	shape_node.position.y = eff_len * 0.5
+	area.add_child(shape_node)
+	node.add_child(area)
+
+	_visual.add_child(node)
+	_branch_nodes[id] = {"mi": mi, "node": node, "area": area}
+
+
+# Returns the world-space tip of a branch from pos, given its yaw+tilt orientation.
+# Matches the _create_branch rotation convention (Godot YXZ Euler: Ry * Rx).
+# Use this in stage build() functions to place foliage at branch ends.
+func _branch_tip(pos: Vector3, yaw_deg: float, tilt_deg: float, length: float) -> Vector3:
+	var yaw_r  := deg_to_rad(yaw_deg)
+	var tilt_r := deg_to_rad(tilt_deg)
+	return pos + Vector3(sin(tilt_r) * sin(yaw_r), cos(tilt_r), sin(tilt_r) * cos(yaw_r)) * length
 
 
 # Foliage pad: flatten < 1.0 makes it wider than tall (bonsai pad shape).

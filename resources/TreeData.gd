@@ -27,6 +27,28 @@ var REPOT_INTERVAL  := SEC_PER_YEAR * 2.0
 @export var time_since_fertilized: float = 900.0
 @export var time_since_repotted: float = 0.0
 
+# Per-branch state: maps branch_id → {pruned, wire_enabled, wired_yaw, wired_tilt}
+@export var branch_states: Dictionary = {}
+
+func is_branch_pruned(id: String) -> bool:
+	return branch_states.get(id, {}).get("pruned", false)
+
+func get_branch_angles(id: String, default_yaw: float, default_tilt: float) -> Array:
+	var s: Dictionary = branch_states.get(id, {})
+	if s.get("wire_enabled", false):
+		return [s.get("wired_yaw", default_yaw), s.get("wired_tilt", default_tilt)]
+	return [default_yaw, default_tilt]
+
+func prune_branch(id: String) -> void:
+	if not branch_states.has(id):
+		branch_states[id] = {}
+	branch_states[id]["pruned"] = true
+	time_since_pruned = 0.0
+	prune_count += 1
+	var m := GameClock.get_month()
+	if m in [6, 7, 8]:
+		health = maxf(0.0, health - 0.03)
+
 
 func on_time_passed(dt: float) -> void:
 	age += dt
