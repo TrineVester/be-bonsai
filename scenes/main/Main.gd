@@ -19,7 +19,9 @@ var _clock_label: Label
 
 
 func _ready() -> void:
-	_setup_world()
+	add_child(GreenhouseEnvironment.new())
+	add_child(ShelfMesh.new())
+	_setup_camera()
 	_create_trees()
 	_build_ui()
 	GameClock.speed_changed.connect(_on_speed_changed)
@@ -51,34 +53,11 @@ func _input(event: InputEvent) -> void:
 		_try_pick_tree(event.position)
 
 
-func _setup_world() -> void:
+func _setup_camera() -> void:
 	var camera := Camera3D.new()
-	camera.position = Vector3(0.0, 2.5, 6.0)
-	camera.rotation_degrees = Vector3(-18.0, 0.0, 0.0)
+	camera.position = Vector3(0.0, 2.2, 4.2)
+	camera.rotation_degrees = Vector3(-15.0, 0.0, 0.0)
 	add_child(camera)
-
-	var light := DirectionalLight3D.new()
-	light.rotation_degrees = Vector3(-50.0, 30.0, 0.0)
-	light.light_energy = 1.2
-	add_child(light)
-
-	var ambient := WorldEnvironment.new()
-	var env := Environment.new()
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.6, 0.6, 0.6)
-	env.ambient_light_energy = 0.5
-	ambient.environment = env
-	add_child(ambient)
-
-	var shelf_mesh := BoxMesh.new()
-	shelf_mesh.size = Vector3(7.5, 0.2, 2.2)
-	var shelf_mat := StandardMaterial3D.new()
-	shelf_mat.albedo_color = Color(0.42, 0.28, 0.14)
-	shelf_mesh.surface_set_material(0, shelf_mat)
-	var shelf := MeshInstance3D.new()
-	shelf.mesh = shelf_mesh
-	shelf.position = Vector3(0.0, -0.1, 0.0)
-	add_child(shelf)
 
 
 func _create_trees() -> void:
